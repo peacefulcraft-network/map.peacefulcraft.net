@@ -29,12 +29,12 @@ export default class SidePanel {
 					}),
 				]),
 				m('ul.side-panel__body-links', [
-					/*m('li.side_panel__body-link', {
+					m('li.side_panel__body-link', {
 						class: [
 							`${m.route.param('map').toUpperCase() == 'AINCRAD'? 'side-panel__body-link--selected': ''}`
 						],
 						onclick: () => { m.route.set('/:map', { map: 'aincrad'}); },
-					}, 'Aincrad'),*/
+					}, 'Aincrad'),
 					m('li.side_panel__body-link', {
 						class: [
 							`${m.route.param('map').toUpperCase() == 'CREATIVE'? 'side-panel__body-link--selected': ''}`
