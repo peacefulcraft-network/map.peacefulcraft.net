@@ -1,0 +1,41 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Deploy Development Site
+
+on:
+  push:
+    branches:
+      - '*'
+      - '!master'
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+
+    - name: Install Dependencies
+      run: npm install --require-dev
+
+    - name: Build the site
+      run: npm run build
+    
+    - name: Push to CDN
+      run: |
+        eval "$(ssh-agent -s)"
+        ssh-add - <<< "${{ secrets.CDN_INGRESS_KEY }}"
+        scp -o StrictHostKeyChecking=no -v -P "${{ secrets.CDN_INGRESS_PORT }}" -r bin/* "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}":"${{ secrets.CDN_DEV_PATH }}"
+    
+    - name: Delete the old version
+      run: |
+        eval "$(ssh-agent -s)"
+        ssh-add - <<< "${{ secrets.CDN_INGRESS_KEY }}"
+        ssh -p "${{ secrets.CDN_INGRESS_PORT }}" "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}" "find \"${{ secrets.CDN_DEV_PATH }}\" -mmin +5 -type f -exec rm {} \;"
