@@ -1,11 +1,12 @@
 # This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Deploy Site
+name: Deploy Production Site
 
 on:
   push:
     branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,10 +30,10 @@ jobs:
       run: |
         eval "$(ssh-agent -s)"
         ssh-add - <<< "${{ secrets.CDN_INGRESS_KEY }}"
-        scp -o StrictHostKeyChecking=no -v -P "${{ secrets.CDN_INGRESS_PORT }}" -r bin/* "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}":"${{ secrets.CDN_PATH }}"
+        scp -o StrictHostKeyChecking=no -v -P "${{ secrets.CDN_INGRESS_PORT }}" -r bin/* "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}":"${{ secrets.CDN_PROD_PATH }}"
     
     - name: Delete the old version
       run: |
         eval "$(ssh-agent -s)"
         ssh-add - <<< "${{ secrets.CDN_INGRESS_KEY }}"
-        ssh -p "${{ secrets.CDN_INGRESS_PORT }}" "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}" "find \"${{ secrets.CDN_PATH }}\" -mmin +5 -type f -exec rm {} \;"
+        ssh -p "${{ secrets.CDN_INGRESS_PORT }}" "${{ secrets.CDN_INGRESS_USER }}"@"${{ secrets.CDN_INGRESS }}" "find \"${{ secrets.CDN_PROD_PATH }}\" -mmin +5 -type f -exec rm {} \;"
