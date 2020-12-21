@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# TODO:
+# Write a lock file to prevent the next script from running if this one over-runs
+
 user=
 id_file=
 host=
@@ -73,15 +76,29 @@ if [ -z "$destination_dir" ]; then
   exit 3
 fi
 
+# Check for lock file from previous execution
+if test -f "$tmp_dir/$server_hash.lock"; then
+  echo "Previous execution still has resource lock. Deferring execution."
+  exit 3
+fi
+
+# Indicate resource lock
+touch "$tmp_dir/$server_hash.lock"
+
 export server_hash
 export daemon_data_dir
 export tmp_dir
 cd $daemon_data_dir/$server_hash/plugins/dynmap/web
-find * -name '*.jpg' -exec sh -c '
-  dir=$(dirname $0)
-  mkdir -p $tmp_dir/$server_hash/$dir
-  mv $daemon_data_dir/$server_hash/plugins/dynmap/web/$0 $tmp_dir/$server_hash/$dir
-' {} \;
+echo "Locating & packaging files for transfer"
 
-scp -P $port -i $id_file -r $tmp_dir/$server_hash/* $user@$host:$destination_dir
-rm -rf $tmp_dir/$server_hash
+find tiles/ -type f -name '*.jpg' | head -n 50000 | xargs tar --remove-files -rf $tmp_dir/$server_hash.tar
+
+echo "Transfering files to CDN host"
+scp -P $port -i $id_file $tmp_dir/$server_hash.tar $user@$host:$destination_dir
+ssh -p $port -i $id_file $user@$host "tar -xf $destination_dir/$server_hash.tar && rm $destination_dir/$server_hash.tar"
+
+# Cleanup files & resource lock
+echo "Cleaning temp dir & releasing working lock"
+#rm -rf $tmp_dir/$server_hash
+rm $tmp_dir/$server_hash.tar
+rm $tmp_dir/$server_hash.lock
