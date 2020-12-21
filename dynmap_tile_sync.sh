@@ -1,8 +1,5 @@
 #!/bin/bash -e
 
-# TODO:
-# Write a lock file to prevent the next script from running if this one over-runs
-
 user=
 id_file=
 host=
@@ -89,8 +86,8 @@ export server_hash
 export daemon_data_dir
 export tmp_dir
 cd $daemon_data_dir/$server_hash/plugins/dynmap/web
-echo "Locating & packaging files for transfer"
 
+echo "Locating & packaging files for transfer"
 find tiles/ -type f -name '*.jpg' | head -n 50000 | xargs tar --remove-files -rf $tmp_dir/$server_hash.tar
 
 echo "Transfering files to CDN host"
